@@ -39,7 +39,26 @@ class ImapSource extends DataSource {
    *
    * @var array
    */
-  protected $_fields = array('subject','from','to','date','message_id','references','in_reply_to','size','uid','msgno','recent','flagged','answered','deleted','seen','draft');
+  protected $_fields = array(
+          'subject',
+          'from',
+          'to',
+          'date',
+          'message_id',
+          'references',
+          'in_reply_to',
+          'size',
+          'uid',
+          'msgno',
+          'recent',
+          'flagged',
+          'answered',
+          'deleted',
+          'seen',
+          'draft',
+          'body',
+          'attachment'
+  );
 
 //  protected $_schema = array(
 //          example:
@@ -199,12 +218,16 @@ class ImapSource extends DataSource {
       $mc = imap_check($this->connection);
       $mc = min($mc->Nmsgs, $queryData['limit']);
 
-      if(!isset($queryData['options'])) { $queryData['options'] = 0; }
-      if(!isset($queryData['search'])) { $queryData['search'] = null; }
+      if(!isset($queryData['options'])) {
+        $queryData['options'] = 0;
+      }
+      if(!isset($queryData['search'])) {
+        $queryData['search'] = null;
+      }
 
       $imapOrder = array();
       list($imapOrder['criteria'], $imapOrder['reverse']) = $this->_imapOrderFormat($queryData['order']);
-      
+
       $resultSet = imap_sort($this->connection, $imapOrder['criteria'], $imapOrder['reverse'], $queryData['options'], $queryData['search'], $this->charset);
       $result = array();
       for($i = 0; $i < $mc; $i++) {
@@ -298,7 +321,6 @@ class ImapSource extends DataSource {
   }
 
   private function _imapFormat($model, $queryData, $data) {
-    // debug('_imapFormat');
     $res = array();
     $count = count($data);
     if (isset($queryData['fields']) && !empty($queryData['fields'])) {
@@ -346,27 +368,29 @@ class ImapSource extends DataSource {
   }
 
   private function checkBody($queryData) {
-    $ret = false;
     if (isset($queryData['fields']) && !empty($queryData['fields'])) {
       if (in_array('body', $queryData['fields'])) {
         return true;
       }
-    } else if (!isset($queryData['fields'])) {
+    }
+    if ((isset($queryData['fields']) && empty($queryData['fields']))
+            || !isset($queryData['fields'])) {
       return true;
     }
-    return $ret;
+    return false;
   }
 
   private function checkAttachment($queryData) {
-    $ret = false;
     if (isset($queryData['fields']) && !empty($queryData['fields'])) {
       if (in_array('attachments', $queryData['fields'])) {
         return true;
       }
-    } else if (!isset($queryData['fields'])) {
+    }
+    if ((isset($queryData['fields']) && empty($queryData['fields']))
+            || !isset($queryData['fields'])) {
       return true;
     }
-    return $ret;
+    return false;
   }
 
   function calculate(&$model, $func, $params = array()) {
