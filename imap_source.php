@@ -194,22 +194,25 @@ class ImapSource extends DataSource {
    * @author gwoo
    **/
   function read(&$model, $queryData = array(), $recursive = null) {
-
     $queryData = $this->__scrubQueryData($queryData);
-
-    debug($queryData);
-
     if ($this->connected) {
       $mc = imap_check($this->connection);
       $mc = min($mc->Nmsgs, $queryData['limit']);
 
-      debug($this->_imapOrderFormat($queryData['order']));
+      if(!isset($queryData['options'])) { $queryData['options'] = 0; }
+      if(!isset($queryData['search'])) { $queryData['search'] = null; }
 
-      $resultSet = imap_fetch_overview($this->connection,"1:{$mc}",0);
-
-
-      $resultSet = $this->_imapFormat($model, $queryData, $resultSet);
-      return $resultSet;
+      $imapOrder = array();
+      list($imapOrder['criteria'], $imapOrder['reverse']) = $this->_imapOrderFormat($queryData['order']);
+      
+      $resultSet = imap_sort($this->connection, $imapOrder['criteria'], $imapOrder['reverse'], $queryData['options'], $queryData['search'], $this->charset);
+      $result = array();
+      for($i = 0; $i < $mc; $i++) {
+        $result_tmp = imap_fetch_overview($this->connection, $resultSet[$i]);
+        $result[] = $result_tmp[0];
+      }
+      $result = $this->_imapFormat($model, $queryData, $result);
+      return $result;
     } else {
       return false;
     }
@@ -220,32 +223,33 @@ class ImapSource extends DataSource {
   /**
    * Convert from simple field to imapSort order criteria
    *
-   * order fields: 'messageDate|date', 'arrivalDate', 'fromAddress', 'subject', 'toAddress', 'ccAddress', 'size'
+   * order fields: 'message_date|date', 'arrival_date', 'from_address', 'subject', 'to_address', 'cc_address', 'size'
    *
    * @param array() $order
    * @return array()
    */
   private function _imapOrderFormat($order = null) {
     $allowedOrderFields = array(
-            'messageDate', 'date',
-            'arrivalDate',
-            'fromAddress',
+            'message_date', 'date',
+            'arrival_date',
+            'from_address',
             'subject',
-            'toAddress',
-            'ccAddress',
+            'to_address',
+            'cc_address',
             'size'
     );
 
     if(!$order) {
-      return array("SORTDATE" => 0);
+      return array(SORTDATE, 0);
     }
+
     $criteria = 'date';
-    $reverse  = 'ASC';
+    $reverse  = 0;
 
     if(is_array($order[0])) {
       $keys = array_keys($order[0]);
       if(is_int($keys[0])) {
-        $criteria = low($order[0][$keys[0]]);
+        $criteria = $order[0][$keys[0]];
       } else {
         $criteria = low($keys[0]);
         $reverse = low($order[0][$keys[0]]) == 'asc' ? 0 : 1;
@@ -255,42 +259,41 @@ class ImapSource extends DataSource {
     }
 
     if(!in_array($criteria, $allowedOrderFields)) {
-      return array("SORTDATE" => 0);
+      return array(SORTDATE, 0);
     }
 
     switch ($criteria) {
-      case 'messageDate':
+      case 'message_date':
       case 'date':
-        return array('SORTDATE', $reverse);
-      break;
+        return array(SORTDATE, $reverse);
+        break;
 
-      case 'arrivalDate':
-        return array('SORTARRIVAL', $reverse);
-      break;
+      case 'arrival_date':
+        return array(SORTARRIVAL, $reverse);
+        break;
 
-      case 'fromAddress':
-        return array('SORTFROM', $reverse);
-      break;
+      case 'from_address':
+        return array(SORTFROM, $reverse);
+        break;
 
       case 'subject ':
-        return array('SORTSUBJECT', $reverse);
-      break;
+        return array(SORTSUBJECT, $reverse);
+        break;
 
-      case 'toAddress':
-        return array('SORTTO', $reverse);
-      break;
+      case 'to_address':
+        return array(SORTTO, $reverse);
+        break;
 
-      case 'ccAddress':
-        return array('SORTCC', $reverse);
-      break;
+      case 'cc_address':
+        return array(SORTCC, $reverse);
+        break;
 
       case 'size':
-        return array('SORTSIZE', $reverse);
-      break;
+        return array(SORTSIZE, $reverse);
+        break;
 
       default:
-      return array("SORTDATE" => 0);
-      ;
+        return array(SORTDATE, 0);
     }
   }
 
