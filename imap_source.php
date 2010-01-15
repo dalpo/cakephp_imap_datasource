@@ -42,6 +42,7 @@ class ImapSource extends DataSource {
   protected $_fields = array('subject','from','to','date','message_id','references','in_reply_to','size','uid','msgno','recent','flagged','answered','deleted','seen','draft');
 
 //  protected $_schema = array(
+//          example:
 //          'tweets' => array(
 //                          'id' => array(
 //                                          'type' => 'integer',
@@ -185,6 +186,7 @@ class ImapSource extends DataSource {
       return false;
     }
   }
+
   /**
    * undocumented function
    *
@@ -192,20 +194,20 @@ class ImapSource extends DataSource {
    * @author gwoo
    **/
   function read(&$model, $queryData = array(), $recursive = null) {
-//    debug('read');
-//    debug($queryData);
-//    if ($this->countonly) {
-//     numRows gets set from calculate()
-//     debug('return with :'.$this->numRows);
-//      return $this->numRows;
-//    }
 
     $queryData = $this->__scrubQueryData($queryData);
+
+    debug($queryData);
 
     if ($this->connected) {
       $mc = imap_check($this->connection);
       $mc = min($mc->Nmsgs, $queryData['limit']);
+
+      debug($this->_imapOrderFormat($queryData['order']));
+
       $resultSet = imap_fetch_overview($this->connection,"1:{$mc}",0);
+
+
       $resultSet = $this->_imapFormat($model, $queryData, $resultSet);
       return $resultSet;
     } else {
@@ -213,6 +215,83 @@ class ImapSource extends DataSource {
     }
 
     return $resultSet;
+  }
+
+  /**
+   * Convert from simple field to imapSort order criteria
+   *
+   * order fields: 'messageDate|date', 'arrivalDate', 'fromAddress', 'subject', 'toAddress', 'ccAddress', 'size'
+   *
+   * @param array() $order
+   * @return array()
+   */
+  private function _imapOrderFormat($order = null) {
+    $allowedOrderFields = array(
+            'messageDate', 'date',
+            'arrivalDate',
+            'fromAddress',
+            'subject',
+            'toAddress',
+            'ccAddress',
+            'size'
+    );
+
+    if(!$order) {
+      return array("SORTDATE" => 0);
+    }
+    $criteria = 'date';
+    $reverse  = 'ASC';
+
+    if(is_array($order[0])) {
+      $keys = array_keys($order[0]);
+      if(is_int($keys[0])) {
+        $criteria = low($order[0][$keys[0]]);
+      } else {
+        $criteria = low($keys[0]);
+        $reverse = low($order[0][$keys[0]]) == 'asc' ? 0 : 1;
+      }
+    } else {
+      $criteria = low($order[0]);
+    }
+
+    if(!in_array($criteria, $allowedOrderFields)) {
+      return array("SORTDATE" => 0);
+    }
+
+    switch ($criteria) {
+      case 'messageDate':
+      case 'date':
+        return array('SORTDATE', $reverse);
+      break;
+
+      case 'arrivalDate':
+        return array('SORTARRIVAL', $reverse);
+      break;
+
+      case 'fromAddress':
+        return array('SORTFROM', $reverse);
+      break;
+
+      case 'subject ':
+        return array('SORTSUBJECT', $reverse);
+      break;
+
+      case 'toAddress':
+        return array('SORTTO', $reverse);
+      break;
+
+      case 'ccAddress':
+        return array('SORTCC', $reverse);
+      break;
+
+      case 'size':
+        return array('SORTSIZE', $reverse);
+      break;
+
+      default:
+      return array("SORTDATE" => 0);
+      ;
+    }
   }
 
   private function _imapFormat($model, $queryData, $data) {
@@ -351,28 +430,24 @@ class ImapSource extends DataSource {
   }
 
   /**
-   * undocumented function
+   * Caches/returns cached results for child instances
    *
-   * @return void
-   * @author gwoo
+   * @return array
+   *
    **/
   function listSources() {
-    //debug('listSources');
-    $config = $this->config;
-
-    $list = imap_getmailboxes($this->connection, "{{$config['host']}}", "*");
-    // return $list;
-
-    if (is_array($list)) {
-      foreach ($list as $key => $val) {
-//  	       echo "($key) ";
-//  	       echo imap_utf7_decode($val->name) . ",";
-//  	       echo "'" . $val->delimiter . "',";
-//  	       echo $val->attributes . "<br />\n";
-      }
-    } else {
-      pr($this->errors);
+    if ($this->cacheSources === false) {
+      return null;
     }
+
+    if ($this->_sources !== null) {
+      return $this->_sources;
+    }
+
+    $sources = imap_getmailboxes($this->connection, "{{$config['host']}}", "*");
+
+    $this->_sources = $sources;
+    return $sources;
   }
 
   /**
