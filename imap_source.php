@@ -195,15 +195,16 @@ class ImapSource extends DataSource {
     ** @param type $var
     **
   */
-  function delete(&$model, $id = null, $options = null) {
+  function delete(&$model, $id = null) {
     if ($this->connected) {
-      if ($id == null) {
-        $id = $model->id;
+      if ($id == null && $model->id) { $id = $model->id; }
+      if($id) { 
+        imap_delete($this->connection, $id, FT_UID);
+        imap_expunge($this->connection);
+        return true;
       }
-      return (imap_delete($this->connection, $id, $options) && imap_expunge($this->connection));
-    } else {
-      return false;
     }
+    return false;
   }
 
   /**
