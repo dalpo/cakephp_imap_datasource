@@ -25,7 +25,7 @@ class ImapSource extends DataSource {
    *
    * @var unknown_type
    */
-  protected $__baseConfig = array(
+  protected $_baseConfig = array(
           'host' => 'localhost',
           'connect' => 'imap/notls',
           'login' => 'root',
@@ -169,7 +169,7 @@ class ImapSource extends DataSource {
   function reconnect($config = null) {
     $this->disconnect();
     if ($config != null) {
-      $this->config = am($this->__baseConfig, $config);
+      $this->config = am($this->_baseConfig, $config);
     }
     return $this->connect();
   }
