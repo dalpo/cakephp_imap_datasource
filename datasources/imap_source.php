@@ -122,7 +122,6 @@ class ImapSource extends DataSource {
    * Constructor
    */
   function __construct($config = null, $autoConnect = true) {
-    Configure::write('debug', 1);
     $this->debug = Configure::read('debug') > 0;
     $this->fullDebug = Configure::read('debug') > 1;
     // debug($config);
