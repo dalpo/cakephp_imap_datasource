@@ -25,7 +25,7 @@ class ImapSource extends DataSource {
    *
    * @var unknown_type
    */
-  protected $_baseConfig = array(
+  public $_baseConfig = array(
           'host' => 'localhost',
           'connect' => 'imap/notls',
           'login' => 'root',
