@@ -58,7 +58,7 @@ class CompanyEmail extends AppModel {
 
 finally in your controller you can retrive email:
 =================================================
-$emails = $this->find('all', array(
+$emails = $this->CompanyEmail->find('all', array(
     'order' => array('message_date' => 'DESC')
   )
 );
