@@ -1,2 +1,67 @@
 Cakephp Imap datasource that allows querying the Imap mailboxes of configured account
 Based on gwoo and mooose work: http://bin.cakephp.org/view/154300048
+
+Datasource is under development but it basically works.. I need more free time :P
+
+
+database.php configuration:
+=================================================
+
+class DATABASE_CONFIG {
+
+  public $default = array(
+	//your default db connection...
+  );
+
+  //imap email connection
+  public $emailConnection = array(
+          'datasource'   => 'imap',
+          'host' => 'imap.example.net',
+          'connect' => 'imap/notls',
+          'login' => 'email@example.net',
+          'password' => 'pwd',
+          'mailbox' => 'INBOX',
+          'port' => '143'
+  );
+
+  public $test = array(
+          'driver' => 'mysql',
+          'persistent' => false,
+          'host' => 'localhost',
+          'login' => 'user',
+          'password' => 'password',
+          'database' => 'test_database_name',
+          'prefix' => ''
+  );
+}
+
+
+
+
+model configuration:
+=================================================
+
+class CompanyEmail extends AppModel {
+
+  public $name = 'CompanyEmail';
+  public $useDbConfig = 'emailConnection';
+  public $useTable = false;
+  public $displayField = "subject";
+
+  
+  //Model::exists()  must return true
+  function exists($reset = false) {
+    return true;
+  }
+
+}
+
+finally in your controller you can retrive email:
+=================================================
+$emails = $this->find('all', array(
+    'order' => array('message_date' => 'DESC')
+  )
+);
+
+
+
