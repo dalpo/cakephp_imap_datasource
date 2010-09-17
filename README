@@ -1,7 +1,7 @@
 Cakephp Imap datasource that allows querying the Imap mailboxes of configured account
 Based on gwoo and mooose work: http://bin.cakephp.org/view/154300048
 
-Datasource is under development but it basically works.. I need more free time :P
+Datasource is under development but it basically works.. 
 
 
 database.php configuration:
