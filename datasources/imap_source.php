@@ -113,10 +113,10 @@ class ImapSource extends DataSource {
   /**
    * Global vars for decoding a message
    */
-  public $htmlmsg;
-  public $plainmsg;
-  public $charset;
-  public $attachments;
+  public $htmlmsg = null;
+  public $plainmsg = null;
+  public $charset = NIL;
+  public $attachments = null;
 
   /**
    * Constructor
@@ -360,7 +360,7 @@ class ImapSource extends DataSource {
               $res[$i][$model->alias]['attachments'] = $this->attachments;
             }
           }
-          if (!empty($this->charset)) {
+          if ($this->charset && !empty($this->charset)) {
             $res[$i][$model->alias]['charset'] = $this->charset;
           }
         }
@@ -542,7 +542,7 @@ class ImapSource extends DataSource {
     // the message may in $this->htmlmsg, $this->plainmsg, or both
     $this->htmlmsg = '';
     $this->plainmsg = '';
-    $this->charset = '';
+    $this->charset = NIL;
     $this->attachments = array();
 
     // HEADER - we have it already
@@ -612,7 +612,7 @@ class ImapSource extends DataSource {
       } else {
         $this->htmlmsg .= $data . "<br/><br/>";
       }
-      if (!empty($params['charset'])) {
+      if ($params['charset'] && !empty($params['charset'])) {
         $this->charset = $params['charset'];  // assume all parts are same charset
       }
     } elseif ($p->type == 2 && $data) {
@@ -632,4 +632,4 @@ class ImapSource extends DataSource {
     }
   }
 }
-?>
+
